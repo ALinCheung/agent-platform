@@ -1,0 +1,74 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: agent-platform
+  # Thymeleaf配置
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+  # 异步任务配置
+  task:
+    execution:
+      pool:
+        core-size: 5
+        max-size: 10
+        queue-capacity: 100
+        thread-name-prefix: execution-pool-
+    scheduling:
+      pool:
+        size: 4
+      thread-name-prefix: scheduler-pool-
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 应用自定义配置
+app:
+  data-dir: ./data
+  db-name: agent-platform.db
+  # 任务执行配置
+  execution:
+    max-concurrent: 10
+    default-timeout-seconds: 300
+    queue-capacity: 100
+  # 调度配置
+  scheduler:
+    enabled: true
+    cleanup-days: 30
+  # Claude CLI配置
+  claude:
+    cli-path: claude
+    check-interval-minutes: 5
+
+# 日志配置
+logging:
+  level:
+    com.agentplatform: DEBUG
+    org.springframework.scheduling: INFO
+  file:
+    name: ./logs/agent-platform.log
+
+# Actuator健康检查
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
