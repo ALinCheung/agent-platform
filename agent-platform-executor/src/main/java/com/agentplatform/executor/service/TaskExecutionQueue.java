@@ -6,7 +6,6 @@ import com.agentplatform.core.enums.ExecutionStatus;
 import com.agentplatform.core.service.ExecutionHistoryService;
 import com.agentplatform.core.service.TaskExecutor;
 import com.agentplatform.core.service.TaskService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -22,15 +21,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class TaskExecutionQueue {
 
     private final TaskExecutor taskExecutor;
     private final TaskService taskService;
     private final ExecutionHistoryService executionHistoryService;
-
-    @Qualifier("execution-pool")
     private final Executor executionPool;
+
+    public TaskExecutionQueue(TaskExecutor taskExecutor, TaskService taskService,
+                              ExecutionHistoryService executionHistoryService,
+                              @Qualifier("execution-pool") Executor executionPool) {
+        this.taskExecutor = taskExecutor;
+        this.taskService = taskService;
+        this.executionHistoryService = executionHistoryService;
+        this.executionPool = executionPool;
+    }
 
     /** 正在执行的任务ID -> 执行记录ID */
     private final Map<Long, Long> runningTasks = new ConcurrentHashMap<>();

@@ -32,6 +32,9 @@
         <mybatis-plus.version>3.5.6</mybatis-plus.version>
         <sqlite-jdbc.version>3.45.3.0</sqlite-jdbc.version>
         <lombok.version>1.18.32</lombok.version>
+        <h2.version>2.2.224</h2.version>
+        <playwright.version>1.44.0</playwright.version>
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <dependencyManagement>
@@ -79,6 +82,22 @@
                 <version>${lombok.version}</version>
                 <scope>provided</scope>
             </dependency>
+
+            <!-- H2数据库（测试用） -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Playwright（端到端测试） -->
+            <dependency>
+                <groupId>com.microsoft.playwright</groupId>
+                <artifactId>playwright</artifactId>
+                <version>${playwright.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -99,6 +118,25 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

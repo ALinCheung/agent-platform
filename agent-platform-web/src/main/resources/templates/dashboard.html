@@ -136,6 +136,10 @@
             },
 
             renderCharts() {
+                // 销毁旧的chart实例
+                Chart.getChart('trendChart')?.destroy();
+                Chart.getChart('triggerChart')?.destroy();
+
                 // 趋势图
                 new Chart(document.getElementById('trendChart'), {
                     type: 'line',

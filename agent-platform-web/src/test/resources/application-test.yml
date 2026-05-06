@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: agent-platform-web-test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  task:
+    scheduling:
+      pool:
+        size: 2
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+app:
+  data-dir: ./test-data
+  db-name: test-agent-platform.db
+  execution:
+    max-concurrent: 5
+    default-timeout-seconds: 60
+  scheduler:
+    enabled: false
+  claude:
+    cli-path: claude
+
+logging:
+  level:
+    com.agentplatform: DEBUG

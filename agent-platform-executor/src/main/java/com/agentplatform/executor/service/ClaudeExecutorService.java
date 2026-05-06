@@ -186,7 +186,7 @@ public class ClaudeExecutorService implements TaskExecutor {
      * 读取进程输出流
      */
     private String readStream(InputStream inputStream) {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {

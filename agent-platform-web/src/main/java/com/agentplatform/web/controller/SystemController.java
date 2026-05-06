@@ -1,6 +1,6 @@
 package com.agentplatform.web.controller;
 
-import com.agentplatform.core.service.impl.SqliteDataSourceConfig;
+import com.agentplatform.core.config.SqliteDataSourceConfig;
 import com.agentplatform.executor.monitor.ResourceMonitor;
 import com.agentplatform.executor.service.ClaudeExecutorService;
 import com.agentplatform.scheduler.service.CliHealthChecker;

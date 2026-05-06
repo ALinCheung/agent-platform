@@ -34,11 +34,11 @@ public class CleanupService {
 
         LocalDateTime cutoff = LocalDateTime.now().minusDays(cleanupDays);
 
-        int deleted = executionHistoryService.remove(
+        boolean deleted = executionHistoryService.remove(
                 new LambdaQueryWrapper<TaskExecution>()
                         .lt(TaskExecution::getStartedAt, cutoff)
         );
 
-        log.info("清理完成: 删除{}条过期记录", deleted);
+        log.info("清理完成: 删除结果={}", deleted);
     }
 }

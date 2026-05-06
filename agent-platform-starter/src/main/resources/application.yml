@@ -6,6 +6,13 @@ server:
 spring:
   application:
     name: agent-platform
+  # 数据库初始化
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath*:db/migration/V1__init_schema.sql
+      data-locations:
+      continue-on-error: true
   # Thymeleaf配置
   thymeleaf:
     prefix: classpath:/templates/

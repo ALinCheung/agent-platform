@@ -125,6 +125,59 @@ logs/
 └── agent-platform.log   # 应用日志
 ```
 
+## 测试
+
+### 运行测试
+
+```bash
+# 运行所有测试
+mvn test
+
+# 运行特定模块测试
+mvn test -pl agent-platform-core
+mvn test -pl agent-platform-executor
+mvn test -pl agent-platform-web
+mvn test -pl agent-platform-starter
+
+# 运行性能测试
+mvn test -pl agent-platform-starter -Dtest="com.agentplatform.starter.performance.*"
+
+# 运行端到端测试
+mvn test -pl agent-platform-starter -Dtest="com.agentplatform.starter.e2e.*"
+
+# 生成测试覆盖率报告
+mvn test jacoco:report
+```
+
+### 测试覆盖率
+
+测试覆盖率报告生成在各模块的 `target/site/jacoco/index.html`。
+
+### 测试结构
+
+```
+src/test/java/
+├── com/agentplatform/core/          # 核心模块测试
+│   ├── mapper/                      # Mapper单元测试
+│   └── service/impl/                # 服务层单元测试
+├── com/agentplatform/executor/      # 执行器模块测试
+│   ├── handler/                     # 处理器测试
+│   ├── monitor/                     # 监控测试
+│   └── service/                     # 服务测试
+├── com/agentplatform/web/           # Web模块测试
+│   └── controller/                  # 控制器集成测试
+└── com/agentplatform/starter/       # 启动器模块测试
+    ├── e2e/                         # 端到端测试
+    └── performance/                 # 性能测试
+```
+
+### 测试环境配置
+
+- **单元测试**: 使用H2内存数据库，无需外部依赖
+- **集成测试**: 使用H2内存数据库 + Spring Boot测试上下文
+- **端到端测试**: 使用完整Spring Boot应用 + TestRestTemplate
+- **性能测试**: 测试并发、内存、磁盘、API响应时间
+
 ## 常见问题
 
 **Q: Claude CLI不可用怎么办？**

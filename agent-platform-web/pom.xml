@@ -58,5 +58,12 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Playwright（端到端测试） -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

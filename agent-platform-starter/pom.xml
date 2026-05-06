@@ -40,6 +40,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- H2内存数据库（测试用） -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
