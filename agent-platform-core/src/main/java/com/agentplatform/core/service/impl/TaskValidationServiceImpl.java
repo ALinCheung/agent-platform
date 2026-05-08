@@ -90,7 +90,17 @@ public class TaskValidationServiceImpl implements TaskValidator {
 
     private boolean isValidCron(String cronExpression) {
         try {
-            CronExpression.parse(cronExpression);
+            String[] parts = cronExpression.trim().split("\\s+");
+            String exprToValidate;
+            if (parts.length == 5) {
+                // 5字段格式: 分 时 日 月 周 -> 转换为6字段: 秒 分 时 日 月 周
+                exprToValidate = "0 " + cronExpression;
+            } else if (parts.length == 6) {
+                exprToValidate = cronExpression;
+            } else {
+                return false;
+            }
+            CronExpression.parse(exprToValidate);
             return true;
         } catch (Exception e) {
             return false;

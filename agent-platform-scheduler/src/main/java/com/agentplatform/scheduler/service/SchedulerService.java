@@ -61,14 +61,29 @@ public class SchedulerService {
         // 如果已注册，先取消
         cancelTask(task.getId());
 
-        CronTrigger trigger = new CronTrigger(task.getCronExpression());
+        // 转换为6字段格式（秒 分 时 日 月 周）
+        String cronExpr = normalizeCronExpression(task.getCronExpression());
+        CronTrigger trigger = new CronTrigger(cronExpr);
         ScheduledFuture<?> future = schedulerTaskScheduler.schedule(
                 () -> executeScheduledTask(task),
                 trigger
         );
 
         scheduledTasks.put(task.getId(), future);
-        log.info("注册Cron任务: id={}, cron={}", task.getId(), task.getCronExpression());
+        log.info("注册Cron任务: id={}, cron={}", task.getId(), cronExpr);
+    }
+
+    /**
+     * 将5字段Cron表达式转换为6字段格式
+     * 5字段格式: 分 时 日 月 周
+     * 6字段格式: 秒 分 时 日 月 周
+     */
+    private String normalizeCronExpression(String cronExpression) {
+        String[] parts = cronExpression.trim().split("\\s+");
+        if (parts.length == 5) {
+            return "0 " + cronExpression;
+        }
+        return cronExpression;
     }
 
     /**
