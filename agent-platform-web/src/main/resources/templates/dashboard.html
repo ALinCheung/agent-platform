@@ -4,84 +4,87 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
     <title>Agent Platform - 仪表盘</title>
+    <link rel="stylesheet" href="/css/tech-dark.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body class="bg-gray-50 min-w-[1280px]" x-data="dashboard()" x-init="init()">
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center space-x-8">
-                    <a href="/" class="text-xl font-bold text-indigo-600">Agent Platform</a>
-                    <a href="/" class="text-indigo-600 border-b-2 border-indigo-600 px-3 py-2 text-sm font-medium">仪表盘</a>
-                    <a href="/tasks" class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">任务管理</a>
-                    <a href="/executions" class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">执行监控</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="min-w-[1280px]" x-data="dashboard()" x-init="init()">
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-6">仪表盘</h1>
+    <!-- 侧边栏 -->
+    <div th:replace="~{fragments/sidebar :: nav('dashboard')}"></div>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <h1 class="text-2xl font-bold mb-6 animate-fade-in-up" style="font-family: var(--font-heading);">仪表盘</h1>
 
         <!-- 统计卡片 -->
         <div class="grid grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm font-medium text-gray-500">任务总数</div>
-                <div class="mt-1 text-3xl font-semibold text-gray-900" x-text="overview.tasks?.total || 0"></div>
+            <div class="card p-6 animate-fade-in-up stagger-1">
+                <div class="text-sm text-[var(--color-text-secondary)]">任务总数</div>
+                <div class="mt-1 text-3xl font-semibold glow-sm" style="font-family: var(--font-heading);"
+                     x-text="overview.tasks?.total || 0"></div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm font-medium text-gray-500">已启用</div>
-                <div class="mt-1 text-3xl font-semibold text-green-600" x-text="overview.tasks?.enabled || 0"></div>
+            <div class="card p-6 animate-fade-in-up stagger-2">
+                <div class="text-sm text-[var(--color-text-secondary)]">已启用</div>
+                <div class="mt-1 text-3xl font-semibold" style="color: var(--color-accent); font-family: var(--font-heading);"
+                     x-text="overview.tasks?.enabled || 0"></div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm font-medium text-gray-500">今日执行</div>
-                <div class="mt-1 text-3xl font-semibold text-blue-600" x-text="overview.today?.total || 0"></div>
+            <div class="card p-6 animate-fade-in-up stagger-3">
+                <div class="text-sm text-[var(--color-text-secondary)]">今日执行</div>
+                <div class="mt-1 text-3xl font-semibold" style="color: var(--color-info); font-family: var(--font-heading);"
+                     x-text="overview.today?.total || 0"></div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-sm font-medium text-gray-500">成功率</div>
-                <div class="mt-1 text-3xl font-semibold text-indigo-600" x-text="successRate + '%'"></div>
+            <div class="card p-6 animate-fade-in-up stagger-4">
+                <div class="text-sm text-[var(--color-text-secondary)]">成功率</div>
+                <div class="mt-1 text-3xl font-semibold" style="color: var(--color-accent); font-family: var(--font-heading);"
+                     x-text="successRate + '%'"></div>
             </div>
         </div>
 
         <!-- 图表区域 -->
         <div class="grid grid-cols-2 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">最近7天执行趋势</h3>
+            <div class="card p-6 animate-fade-in-up stagger-2">
+                <h3 class="text-lg font-medium mb-4" style="font-family: var(--font-heading);">最近7天执行趋势</h3>
                 <canvas id="trendChart" height="200"></canvas>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">任务触发类型分布</h3>
+            <div class="card p-6 animate-fade-in-up stagger-3">
+                <h3 class="text-lg font-medium mb-4" style="font-family: var(--font-heading);">任务触发类型分布</h3>
                 <canvas id="triggerChart" height="200"></canvas>
             </div>
         </div>
 
         <!-- TOP榜 -->
-        <div class="grid grid-cols-2 gap-6">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">失败任务TOP榜</h3>
+        <div class="grid grid-cols-2 gap-6 animate-fade-in-up stagger-4">
+            <div class="card p-6">
+                <h3 class="text-lg font-medium mb-4" style="font-family: var(--font-heading);">失败任务TOP榜</h3>
                 <div class="space-y-3">
                     <template x-for="item in topFailed" :key="item.name">
                         <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-700" x-text="item.name"></span>
-                            <span class="text-sm font-medium text-red-600" x-text="item.failureCount + ' 次'"></span>
+                            <span class="text-sm text-[var(--color-text)]" x-text="item.name"></span>
+                            <span class="text-sm font-medium" style="color: var(--color-destructive);" x-text="item.failureCount + ' 次'"></span>
                         </div>
                     </template>
-                    <div x-show="topFailed.length === 0" class="text-sm text-gray-500">暂无数据</div>
+                    <div x-show="topFailed.length === 0" class="empty-state">
+                        <div class="empty-state-icon">—</div>
+                        <div>暂无数据</div>
+                    </div>
                 </div>
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">耗时任务TOP榜</h3>
+            <div class="card p-6">
+                <h3 class="text-lg font-medium mb-4" style="font-family: var(--font-heading);">耗时任务TOP榜</h3>
                 <div class="space-y-3">
                     <template x-for="item in topSlow" :key="item.name">
                         <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-700" x-text="item.name"></span>
-                            <span class="text-sm font-medium text-orange-600" x-text="formatDuration(item.avgDuration)"></span>
+                            <span class="text-sm text-[var(--color-text)]" x-text="item.name"></span>
+                            <span class="text-sm font-medium" style="color: var(--color-warning);" x-text="formatDuration(item.avgDuration)"></span>
                         </div>
                     </template>
-                    <div x-show="topSlow.length === 0" class="text-sm text-gray-500">暂无数据</div>
+                    <div x-show="topSlow.length === 0" class="empty-state">
+                        <div class="empty-state-icon">—</div>
+                        <div>暂无数据</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -136,9 +139,11 @@
             },
 
             renderCharts() {
-                // 销毁旧的chart实例
                 Chart.getChart('trendChart')?.destroy();
                 Chart.getChart('triggerChart')?.destroy();
+
+                const gridColor = 'rgba(71, 85, 105, 0.3)';
+                const textColor = '#94A3B8';
 
                 // 趋势图
                 new Chart(document.getElementById('trendChart'), {
@@ -149,18 +154,33 @@
                             {
                                 label: '成功',
                                 data: this.history.map(d => d.success),
-                                borderColor: '#10B981',
-                                tension: 0.1
+                                borderColor: '#22C55E',
+                                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                pointBackgroundColor: '#22C55E',
+                                pointBorderColor: '#22C55E'
                             },
                             {
                                 label: '失败',
                                 data: this.history.map(d => d.failed),
                                 borderColor: '#EF4444',
-                                tension: 0.1
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                tension: 0.3,
+                                fill: true,
+                                pointBackgroundColor: '#EF4444',
+                                pointBorderColor: '#EF4444'
                             }
                         ]
                     },
-                    options: { responsive: true }
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: textColor } } },
+                        scales: {
+                            x: { ticks: { color: textColor }, grid: { color: gridColor } },
+                            y: { ticks: { color: textColor }, grid: { color: gridColor } }
+                        }
+                    }
                 });
 
                 // 触发类型分布图
@@ -170,10 +190,15 @@
                         labels: this.triggerStats.map(d => d.triggerType),
                         datasets: [{
                             data: this.triggerStats.map(d => d.count),
-                            backgroundColor: ['#6366F1', '#10B981', '#F59E0B']
+                            backgroundColor: ['#22C55E', '#3B82F6', '#F59E0B'],
+                            borderColor: '#1E293B',
+                            borderWidth: 2
                         }]
                     },
-                    options: { responsive: true }
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { labels: { color: textColor } } }
+                    }
                 });
             },
 

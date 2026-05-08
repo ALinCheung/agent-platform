@@ -4,66 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
     <title>Agent Platform - 执行监控</title>
+    <link rel="stylesheet" href="/css/tech-dark.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body class="bg-gray-50 min-w-[1280px]" x-data="executions()" x-init="init()">
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center space-x-8">
-                    <a href="/" class="text-xl font-bold text-indigo-600">Agent Platform</a>
-                    <a href="/" class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">仪表盘</a>
-                    <a href="/tasks" class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">任务管理</a>
-                    <a href="/executions" class="text-indigo-600 border-b-2 border-indigo-600 px-3 py-2 text-sm font-medium">执行监控</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="min-w-[1280px]" x-data="executions()" x-init="init()" @close-detail.window="showDetail = false">
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <h1 class="text-2xl font-bold text-gray-900 mb-6">执行监控</h1>
+    <!-- 侧边栏 -->
+    <div th:replace="~{fragments/sidebar :: nav('executions')}"></div>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <div class="flex justify-between items-center mb-6 animate-fade-in-up">
+            <h1 class="text-2xl font-bold" style="font-family: var(--font-heading);">执行监控</h1>
+            <button @click="loadExecutions()" class="btn-secondary">刷新</button>
+        </div>
 
         <!-- 执行记录列表 -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="card overflow-hidden animate-fade-in-up stagger-1">
+            <table class="tech-table">
+                <thead>
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">任务ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">开始时间</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">耗时</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">重试次数</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
+                        <th>ID</th>
+                        <th>任务</th>
+                        <th>状态</th>
+                        <th>子任务进度</th>
+                        <th>开始时间</th>
+                        <th>耗时</th>
+                        <th>重试</th>
+                        <th class="text-right">操作</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody>
                     <template x-for="exec in executions" :key="exec.id">
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="exec.id"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="exec.taskId"></td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                            <td class="text-[var(--color-text-muted)]" x-text="'#' + exec.id"></td>
+                            <td class="text-[var(--color-text)]" x-text="getTaskName(exec.taskId)"></td>
+                            <td>
+                                <span class="badge"
                                       :class="{
-                                          'bg-yellow-100 text-yellow-800': exec.status === 'RUNNING',
-                                          'bg-green-100 text-green-800': exec.status === 'SUCCESS',
-                                          'bg-red-100 text-red-800': exec.status === 'FAILED',
-                                          'bg-orange-100 text-orange-800': exec.status === 'TIMEOUT',
-                                          'bg-blue-100 text-blue-800': exec.status === 'RETRYING'
+                                          'badge-running animate-pulse-glow': exec.status === 'RUNNING',
+                                          'badge-success': exec.status === 'SUCCESS',
+                                          'badge-failed': exec.status === 'FAILED',
+                                          'badge-timeout': exec.status === 'TIMEOUT',
+                                          'badge-pending': exec.status === 'RETRYING',
+                                          'badge-terminated': exec.status === 'TERMINATED'
                                       }"
-                                      x-text="exec.status">
+                                      x-text="statusLabel(exec.status)">
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="exec.startedAt"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="formatDuration(exec.durationMs)"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="exec.retryCount"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <button @click="viewDetail(exec)" class="text-indigo-600 hover:text-indigo-900">详情</button>
+                            <td>
+                                <template x-if="exec.subtaskStats">
+                                    <div class="flex items-center gap-2">
+                                        <div class="progress-bar" style="width: 60px;">
+                                            <div class="progress-fill"
+                                                 :style="'width: ' + (exec.subtaskStats.total > 0 ? (exec.subtaskStats.completed / exec.subtaskStats.total * 100) : 0) + '%'">
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-[var(--color-text-muted)]"
+                                              x-text="exec.subtaskStats.completed + '/' + exec.subtaskStats.total"></span>
+                                    </div>
+                                </template>
+                                <template x-if="!exec.subtaskStats">
+                                    <span class="text-xs text-[var(--color-text-muted)]">-</span>
+                                </template>
+                            </td>
+                            <td class="text-sm text-[var(--color-text-secondary)]" x-text="exec.startedAt"></td>
+                            <td class="text-sm text-[var(--color-text-secondary)]" x-text="formatDuration(exec.durationMs)"></td>
+                            <td class="text-sm text-[var(--color-text-muted)]" x-text="exec.retryCount"></td>
+                            <td class="text-right space-x-2">
+                                <button @click="viewDetail(exec)" class="btn-ghost" style="color: var(--color-accent);">详情</button>
+                                <button x-show="exec.status === 'RUNNING'"
+                                        @click="terminateExecution(exec.id)"
+                                        class="btn-ghost" style="color: var(--color-destructive);">终止</button>
                                 <button x-show="exec.status === 'FAILED' || exec.status === 'TIMEOUT'"
                                         @click="retryExecution(exec.id)"
-                                        class="text-green-600 hover:text-green-900">重试</button>
+                                        class="btn-ghost" style="color: var(--color-accent);">重试</button>
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-if="executions.length === 0">
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">▶</div>
+                                    <div>暂无执行记录</div>
+                                </div>
                             </td>
                         </tr>
                     </template>
@@ -72,42 +99,187 @@
         </div>
 
         <!-- 详情模态框 -->
-        <div x-show="showDetail" x-cloak
-             class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-20 mx-auto p-5 border w-[700px] shadow-lg rounded-md bg-white">
+        <div x-show="showDetail" x-cloak class="modal-overlay"
+             @click.self="closeDetail()">
+            <div class="modal-content" style="max-width: 800px; max-height: 85vh; overflow-y: auto;">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-medium text-gray-900">执行详情</h3>
-                    <button @click="showDetail = false" class="text-gray-400 hover:text-gray-600">&times;</button>
+                    <h3 class="text-lg font-medium" style="font-family: var(--font-heading);">
+                        执行详情 <span class="text-[var(--color-text-muted)] text-sm" x-text="'#' + detail?.id"></span>
+                    </h3>
+                    <button @click="closeDetail()" class="btn-ghost text-lg">&times;</button>
                 </div>
-                <div x-show="detail" class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <div class="text-sm text-gray-500">状态</div>
-                            <div class="text-sm font-medium" x-text="detail?.status"></div>
+
+                <div x-show="detail" class="space-y-6">
+                    <!-- 基本信息 -->
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="p-3 rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)]">
+                            <div class="text-xs text-[var(--color-text-muted)]">状态</div>
+                            <div class="mt-1">
+                                <span class="badge"
+                                      :class="{
+                                          'badge-running animate-pulse-glow': detail?.status === 'RUNNING',
+                                          'badge-success': detail?.status === 'SUCCESS',
+                                          'badge-failed': detail?.status === 'FAILED',
+                                          'badge-timeout': detail?.status === 'TIMEOUT',
+                                          'badge-terminated': detail?.status === 'TERMINATED'
+                                      }"
+                                      x-text="statusLabel(detail?.status)">
+                                </span>
+                            </div>
                         </div>
-                        <div>
-                            <div class="text-sm text-gray-500">退出码</div>
-                            <div class="text-sm font-medium" x-text="detail?.exitCode ?? '-'"></div>
+                        <div class="p-3 rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)]">
+                            <div class="text-xs text-[var(--color-text-muted)]">退出码</div>
+                            <div class="mt-1 text-sm font-medium" x-text="detail?.exitCode ?? '-'"></div>
                         </div>
-                        <div>
-                            <div class="text-sm text-gray-500">开始时间</div>
-                            <div class="text-sm font-medium" x-text="detail?.startedAt"></div>
+                        <div class="p-3 rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)]">
+                            <div class="text-xs text-[var(--color-text-muted)]">开始时间</div>
+                            <div class="mt-1 text-sm" x-text="detail?.startedAt"></div>
                         </div>
-                        <div>
-                            <div class="text-sm text-gray-500">结束时间</div>
-                            <div class="text-sm font-medium" x-text="detail?.finishedAt ?? '-'"></div>
+                        <div class="p-3 rounded-lg bg-[var(--color-bg-input)] border border-[var(--color-border)]">
+                            <div class="text-xs text-[var(--color-text-muted)]">结束时间</div>
+                            <div class="mt-1 text-sm" x-text="detail?.finishedAt ?? '-'"></div>
                         </div>
                     </div>
+
+                    <!-- 子任务列表 -->
                     <div>
-                        <div class="text-sm text-gray-500 mb-1">输出</div>
-                        <pre class="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-48" x-text="detail?.output || '-'"></pre>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-medium" style="font-family: var(--font-heading);">子任务列表</h4>
+                            <span class="text-xs text-[var(--color-text-muted)]" x-text="subtaskProgress"></span>
+                        </div>
+                        <div class="space-y-2">
+                            <template x-for="st in subtasks" :key="st.id">
+                                <div class="rounded-lg border border-[var(--color-border)] overflow-hidden"
+                                     :class="st.status === 'RUNNING' ? 'border-[var(--color-accent)] glow-box-sm' : ''">
+                                    <!-- 子任务头部 -->
+                                    <div class="flex items-center justify-between p-3 cursor-pointer hover:bg-[var(--color-bg-hover)] transition-colors"
+                                         @click="toggleSubtaskExpand(st.id)">
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xs text-[var(--color-text-muted)] w-6" x-text="'#' + st.seq"></span>
+                                            <span class="badge"
+                                                  :class="{
+                                                      'badge-running animate-pulse-glow': st.status === 'RUNNING',
+                                                      'badge-success': st.status === 'COMPLETED',
+                                                      'badge-failed': st.status === 'FAILED',
+                                                      'badge-pending': st.status === 'PENDING',
+                                                      'badge-terminated': st.status === 'SKIPPED'
+                                                  }"
+                                                  x-text="subtaskStatusLabel(st.status)">
+                                            </span>
+                                            <span class="text-sm text-[var(--color-text)]" x-text="st.title"></span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xs text-[var(--color-text-muted)]"
+                                                  x-text="formatSubtaskDuration(st)"></span>
+                                            <svg class="w-4 h-4 text-[var(--color-text-muted)] transition-transform"
+                                                 :class="expandedSubtasks.includes(st.id) ? 'rotate-180' : ''"
+                                                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                    <!-- 子任务展开内容 -->
+                                    <div x-show="expandedSubtasks.includes(st.id)" x-cloak
+                                         class="border-t border-[var(--color-border)] p-3 bg-[var(--color-bg-input)]">
+                                        <div x-show="st.description" class="mb-2">
+                                            <div class="text-xs text-[var(--color-text-muted)] mb-1">描述</div>
+                                            <div class="text-sm text-[var(--color-text-secondary)]" x-text="st.description"></div>
+                                        </div>
+                                        <div x-show="st.output" class="mb-2">
+                                            <div class="text-xs text-[var(--color-text-muted)] mb-1">输出</div>
+                                            <pre class="log-panel" style="max-height: 150px;" x-text="st.output"></pre>
+                                        </div>
+                                        <div x-show="st.error">
+                                            <div class="text-xs text-[var(--color-destructive)] mb-1">错误</div>
+                                            <pre class="log-panel" style="max-height: 150px; border-color: rgba(239,68,68,0.3);" x-text="st.error"></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                            <div x-show="subtasks.length === 0" class="empty-state py-4">
+                                <div class="text-sm text-[var(--color-text-muted)]">无子任务记录</div>
+                            </div>
+                        </div>
                     </div>
-                    <div x-show="detail?.error">
-                        <div class="text-sm text-red-500 mb-1">错误</div>
-                        <pre class="bg-red-50 p-3 rounded text-xs overflow-auto max-h-48" x-text="detail?.error"></pre>
+
+                    <!-- 执行日志 -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-medium" style="font-family: var(--font-heading);">执行日志</h4>
+                            <div class="flex items-center gap-2">
+                                <select x-model="logFilter" @change="loadLogs(detail.id)"
+                                        class="input-tech" style="width: auto; padding: 0.25rem 0.5rem; font-size: 0.75rem;">
+                                    <option value="">全部</option>
+                                    <option value="PROMPT">Prompt</option>
+                                    <option value="OUTPUT">输出</option>
+                                    <option value="ERROR">错误</option>
+                                    <option value="STEP">步骤</option>
+                                    <option value="STATUS">状态</option>
+                                </select>
+                                <template x-if="detail?.status === 'RUNNING'">
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-[var(--color-accent)] animate-pulse-glow"></span>
+                                        <span class="text-xs text-[var(--color-accent)]">实时</span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="log-panel" id="logPanel" style="max-height: 300px;">
+                            <template x-for="log in logs" :key="log.id">
+                                <div class="log-line"
+                                     :class="{
+                                         'log-prompt': log.logType === 'PROMPT',
+                                         'log-output': log.logType === 'OUTPUT',
+                                         'log-error': log.logType === 'ERROR',
+                                         'log-step': log.logType === 'STEP',
+                                         'log-status': log.logType === 'STATUS'
+                                     }">
+                                    <span class="text-[10px] text-[var(--color-text-muted)] mr-2 select-none"
+                                          x-text="formatLogTime(log.createdAt)"></span>
+                                    <span class="text-[10px] mr-2 select-none"
+                                          :class="{
+                                              'text-blue-400': log.logType === 'PROMPT',
+                                              'text-green-400': log.logType === 'STEP',
+                                              'text-red-400': log.logType === 'ERROR',
+                                              'text-gray-500': log.logType === 'STATUS'
+                                          }"
+                                          x-text="'[' + log.logType + ']'"></span>
+                                    <span x-text="log.content"></span>
+                                </div>
+                            </template>
+                            <div x-show="logs.length === 0" class="text-sm text-[var(--color-text-muted)] p-2">
+                                暂无日志
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- 终止确认对话框 -->
+        <div x-show="showTerminateConfirm" x-cloak class="modal-overlay"
+             @click.self="showTerminateConfirm = false">
+            <div class="modal-content" style="max-width: 400px;">
+                <h3 class="text-lg font-medium mb-3" style="font-family: var(--font-heading); color: var(--color-destructive);">
+                    确认终止
+                </h3>
+                <p class="text-sm text-[var(--color-text-secondary)] mb-4">
+                    确定要终止执行 <span class="text-[var(--color-accent)]" x-text="'#' + terminateTargetId"></span> 吗？<br>
+                    终止后所有未完成的子任务将被跳过。
+                </p>
+                <div class="flex justify-end space-x-3">
+                    <button @click="showTerminateConfirm = false" class="btn-secondary">取消</button>
+                    <button @click="confirmTerminate()" class="btn-danger">确认终止</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div x-show="toast.show" x-cloak
+             class="toast"
+             :class="toast.type === 'success' ? 'toast-success' : 'toast-error'"
+             x-transition>
+            <span x-text="toast.message"></span>
         </div>
     </main>
 
@@ -117,27 +289,182 @@
             executions: [],
             showDetail: false,
             detail: null,
+            subtasks: [],
+            logs: [],
+            logFilter: '',
+            expandedSubtasks: [],
+            showTerminateConfirm: false,
+            terminateTargetId: null,
+            toast: { show: false, message: '', type: 'success' },
+            pollTimer: null,
+            logPollTimer: null,
+            taskNames: {},
 
             async init() {
                 await this.loadExecutions();
+                this.startPolling();
+            },
+
+            startPolling() {
+                // 每5秒刷新执行列表
+                this.pollTimer = setInterval(() => {
+                    if (!this.showDetail) {
+                        this.loadExecutions();
+                    }
+                }, 5000);
+            },
+
+            stopPolling() {
+                if (this.pollTimer) clearInterval(this.pollTimer);
+                if (this.logPollTimer) clearInterval(this.logPollTimer);
+            },
+
+            showToast(message, type = 'success') {
+                this.toast = { show: true, message, type };
+                setTimeout(() => { this.toast.show = false; }, 3000);
             },
 
             async loadExecutions() {
                 const res = await fetch('/api/executions');
                 this.executions = await res.json();
+                // 加载子任务统计
+                for (const exec of this.executions) {
+                    if (exec.status === 'RUNNING' || exec.status === 'SUCCESS' || exec.status === 'FAILED' || exec.status === 'TERMINATED') {
+                        try {
+                            const statsRes = await fetch('/api/executions/' + exec.id + '/subtasks/stats');
+                            if (statsRes.ok) exec.subtaskStats = await statsRes.json();
+                        } catch (e) { /* 忽略 */ }
+                    }
+                    // 缓存任务名
+                    if (!this.taskNames[exec.taskId]) {
+                        try {
+                            const taskRes = await fetch('/api/tasks/' + exec.taskId);
+                            if (taskRes.ok) {
+                                const task = await taskRes.json();
+                                this.taskNames[exec.taskId] = task.name;
+                            }
+                        } catch (e) { /* 忽略 */ }
+                    }
+                }
+            },
+
+            getTaskName(taskId) {
+                return this.taskNames[taskId] || '任务 #' + taskId;
+            },
+
+            statusLabel(status) {
+                const labels = {
+                    'RUNNING': '运行中',
+                    'SUCCESS': '成功',
+                    'FAILED': '失败',
+                    'TIMEOUT': '超时',
+                    'RETRYING': '重试中',
+                    'TERMINATED': '已终止'
+                };
+                return labels[status] || status;
+            },
+
+            subtaskStatusLabel(status) {
+                const labels = {
+                    'PENDING': '等待中',
+                    'RUNNING': '执行中',
+                    'COMPLETED': '已完成',
+                    'FAILED': '失败',
+                    'SKIPPED': '已跳过'
+                };
+                return labels[status] || status;
+            },
+
+            get subtaskProgress() {
+                if (!this.subtasks.length) return '';
+                const done = this.subtasks.filter(s => ['COMPLETED', 'FAILED', 'SKIPPED'].includes(s.status)).length;
+                return done + '/' + this.subtasks.length + ' 完成';
             },
 
             async viewDetail(exec) {
-                const res = await fetch('/api/executions/' + exec.id);
-                this.detail = await res.json();
+                this.detail = exec;
                 this.showDetail = true;
+                this.expandedSubtasks = [];
+                this.logFilter = '';
+
+                // 加载子任务
+                const subRes = await fetch('/api/executions/' + exec.id + '/subtasks');
+                this.subtasks = subRes.ok ? await subRes.json() : [];
+
+                // 加载日志
+                await this.loadLogs(exec.id);
+
+                // 如果正在运行，启动日志轮询
+                this.stopLogPolling();
+                if (exec.status === 'RUNNING') {
+                    this.logPollTimer = setInterval(async () => {
+                        await this.loadLogs(exec.id);
+                        // 同时刷新子任务状态
+                        const subRes = await fetch('/api/executions/' + exec.id + '/subtasks');
+                        this.subtasks = subRes.ok ? await subRes.json() : [];
+                    }, 2000);
+                }
+            },
+
+            stopLogPolling() {
+                if (this.logPollTimer) {
+                    clearInterval(this.logPollTimer);
+                    this.logPollTimer = null;
+                }
+            },
+
+            closeDetail() {
+                this.showDetail = false;
+                this.detail = null;
+                this.subtasks = [];
+                this.logs = [];
+                this.stopLogPolling();
+            },
+
+            async loadLogs(executionId) {
+                const url = this.logFilter
+                    ? '/api/executions/' + executionId + '/logs?type=' + this.logFilter
+                    : '/api/executions/' + executionId + '/logs';
+                const res = await fetch(url);
+                this.logs = res.ok ? await res.json() : [];
+                // 自动滚动到底部
+                this.$nextTick(() => {
+                    const panel = document.getElementById('logPanel');
+                    if (panel) panel.scrollTop = panel.scrollHeight;
+                });
+            },
+
+            toggleSubtaskExpand(id) {
+                const idx = this.expandedSubtasks.indexOf(id);
+                if (idx === -1) {
+                    this.expandedSubtasks.push(id);
+                } else {
+                    this.expandedSubtasks.splice(idx, 1);
+                }
+            },
+
+            terminateExecution(id) {
+                this.terminateTargetId = id;
+                this.showTerminateConfirm = true;
+            },
+
+            async confirmTerminate() {
+                const res = await fetch('/api/executions/' + this.terminateTargetId + '/terminate', { method: 'POST' });
+                if (res.ok) {
+                    this.showToast('执行已终止');
+                    this.showTerminateConfirm = false;
+                    this.closeDetail();
+                    await this.loadExecutions();
+                } else {
+                    this.showToast('终止失败', 'error');
+                }
             },
 
             async retryExecution(id) {
                 if (!confirm('确定重试此执行？')) return;
                 const res = await fetch('/api/executions/' + id + '/retry', { method: 'POST' });
                 if (res.ok) {
-                    alert('重试已提交');
+                    this.showToast('重试已提交');
                     await this.loadExecutions();
                 }
             },
@@ -145,7 +472,22 @@
             formatDuration(ms) {
                 if (!ms) return '-';
                 if (ms < 1000) return ms + 'ms';
-                return (ms / 1000).toFixed(1) + 's';
+                if (ms < 60000) return (ms / 1000).toFixed(1) + 's';
+                return Math.floor(ms / 60000) + 'm ' + Math.round((ms % 60000) / 1000) + 's';
+            },
+
+            formatLogTime(ts) {
+                if (!ts) return '';
+                const d = new Date(ts);
+                return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            },
+
+            formatSubtaskDuration(st) {
+                if (!st.startedAt) return '-';
+                const start = new Date(st.startedAt);
+                const end = st.finishedAt ? new Date(st.finishedAt) : new Date();
+                const ms = end - start;
+                return this.formatDuration(ms);
             }
         };
     }

@@ -4,80 +4,102 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280">
     <title>Agent Platform - 任务管理</title>
+    <link rel="stylesheet" href="/css/tech-dark.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="/js/cron-builder.js"></script>
     <style>[x-cloak] { display: none !important; }</style>
 </head>
-<body class="bg-gray-50 min-w-[1280px]" x-data="tasks()" x-init="init()">
-    <nav class="bg-white shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center space-x-8">
-                    <a href="/" class="text-xl font-bold text-indigo-600">Agent Platform</a>
-                    <a href="/" class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">仪表盘</a>
-                    <a href="/tasks" class="text-indigo-600 border-b-2 border-indigo-600 px-3 py-2 text-sm font-medium">任务管理</a>
-                    <a href="/executions" class="text-gray-700 hover:text-indigo-600 px-3 py-2 text-sm font-medium">执行监控</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+<body class="min-w-[1280px]" x-data="tasks()" x-init="init()">
 
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-900">任务管理</h1>
-            <button @click="showCreateModal = true"
-                    class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 text-sm font-medium">
+    <!-- 侧边栏 -->
+    <div th:replace="~{fragments/sidebar :: nav('tasks')}"></div>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+        <div class="flex justify-between items-center mb-6 animate-fade-in-up">
+            <h1 class="text-2xl font-bold" style="font-family: var(--font-heading);">任务管理</h1>
+            <button @click="showCreateModal = true" class="btn-primary">
                 新建任务
             </button>
         </div>
 
         <!-- 任务列表 -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+        <div class="card overflow-hidden animate-fade-in-up stagger-1">
+            <table class="tech-table">
+                <thead>
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">名称</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">触发类型</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">状态</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">最近执行</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">成功率</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">操作</th>
+                        <th>名称</th>
+                        <th>触发类型</th>
+                        <th>状态</th>
+                        <th>子任务进度</th>
+                        <th>最近执行</th>
+                        <th>成功率</th>
+                        <th class="text-right">操作</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody>
                     <template x-for="task in tasks" :key="task.id">
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900" x-text="task.name"></div>
-                                <div class="text-sm text-gray-500" x-text="task.description"></div>
+                            <td>
+                                <div class="text-sm font-medium text-[var(--color-text)]" x-text="task.name"></div>
+                                <div class="text-xs text-[var(--color-text-muted)]" x-text="task.description"></div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                            <td>
+                                <span class="badge"
                                       :class="{
-                                          'bg-blue-100 text-blue-800': task.triggerType === 'CRON',
-                                          'bg-green-100 text-green-800': task.triggerType === 'WEBHOOK',
-                                          'bg-yellow-100 text-yellow-800': task.triggerType === 'EVENT'
+                                          'badge-pending': task.triggerType === 'CRON',
+                                          'badge-success': task.triggerType === 'WEBHOOK',
+                                          'badge-timeout': task.triggerType === 'EVENT'
                                       }"
                                       x-text="task.triggerType">
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-                                      :class="task.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                            <td>
+                                <span class="badge"
+                                      :class="task.enabled ? 'badge-enabled' : 'badge-disabled'"
                                       x-text="task.enabled ? '已启用' : '已禁用'">
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            <td>
+                                <template x-if="task.subtaskStats">
+                                    <div>
+                                        <div class="text-xs text-[var(--color-text-secondary)] mb-1">
+                                            <span x-text="task.subtaskStats.completed"></span>/<span x-text="task.subtaskStats.total"></span> 完成
+                                        </div>
+                                        <div class="progress-bar" style="width: 80px;">
+                                            <div class="progress-fill"
+                                                 :style="'width: ' + (task.subtaskStats.total > 0 ? (task.subtaskStats.completed / task.subtaskStats.total * 100) : 0) + '%'">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!task.subtaskStats">
+                                    <span class="text-xs text-[var(--color-text-muted)]">-</span>
+                                </template>
+                            </td>
+                            <td class="text-sm text-[var(--color-text-secondary)]"
                                 x-text="task.lastExecutionAt || '-'"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                            <td class="text-sm text-[var(--color-text-secondary)]"
                                 x-text="getSuccessRate(task)"></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                <button @click="executeTask(task.id)" class="text-indigo-600 hover:text-indigo-900">执行</button>
-                                <button @click="editTask(task)" class="text-gray-600 hover:text-gray-900">编辑</button>
+                            <td class="text-right space-x-2">
+                                <button @click="executeTask(task.id)" class="btn-ghost" style="color: var(--color-accent);">执行</button>
+                                <button @click="editTask(task)" class="btn-ghost">编辑</button>
                                 <button @click="toggleTask(task)"
-                                        :class="task.enabled ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'"
+                                        class="btn-ghost"
+                                        :style="task.enabled ? 'color: var(--color-destructive);' : 'color: var(--color-accent);'"
                                         x-text="task.enabled ? '禁用' : '启用'"></button>
-                                <button @click="deleteTask(task.id)" class="text-red-600 hover:text-red-900">删除</button>
+                                <button @click="deleteTask(task.id)" class="btn-ghost" style="color: var(--color-destructive);">删除</button>
+                            </td>
+                        </tr>
+                    </template>
+                    <template x-if="tasks.length === 0">
+                        <tr>
+                            <td colspan="7">
+                                <div class="empty-state">
+                                    <div class="empty-state-icon">📋</div>
+                                    <div>暂无任务，点击"新建任务"开始</div>
+                                </div>
                             </td>
                         </tr>
                     </template>
@@ -86,68 +108,197 @@
         </div>
 
         <!-- 创建/编辑模态框 -->
-        <div x-show="showCreateModal || showEditModal" x-cloak
-             class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div class="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-md bg-white">
-                <h3 class="text-lg font-medium text-gray-900 mb-4"
+        <div x-show="showCreateModal || showEditModal" x-cloak class="modal-overlay"
+             @click.self="closeModal()">
+            <div class="modal-content" style="max-width: 640px;">
+                <h3 class="text-lg font-medium mb-4" style="font-family: var(--font-heading);"
                     x-text="showEditModal ? '编辑任务' : '新建任务'"></h3>
                 <form @submit.prevent="showEditModal ? updateTask() : createTask()">
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">任务名称</label>
-                            <input x-model="form.name" type="text" required
-                                   class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">任务名称</label>
+                            <input x-model="form.name" type="text" required class="input-tech"
+                                   placeholder="输入任务名称">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">命令</label>
-                            <textarea x-model="form.command" rows="3" required
-                                      class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"></textarea>
+                            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">命令</label>
+                            <textarea x-model="form.command" rows="3" required class="input-tech"
+                                      placeholder="输入要执行的命令或 prompt"></textarea>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">触发类型</label>
-                            <select x-model="form.triggerType" required
-                                    class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
-                                <option value="CRON">Cron定时</option>
+                            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">触发类型</label>
+                            <select x-model="form.triggerType" required class="input-tech">
+                                <option value="CRON">Cron 定时</option>
                                 <option value="WEBHOOK">Webhook</option>
                                 <option value="EVENT">事件</option>
                             </select>
                         </div>
-                        <div x-show="form.triggerType === 'CRON'">
-                            <label class="block text-sm font-medium text-gray-700">Cron表达式</label>
-                            <input x-model="form.cronExpression" type="text"
-                                   class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                                   placeholder="0 0 9 * * *">
+                        <!-- Cron Builder 组件 -->
+                        <div x-show="form.triggerType === 'CRON'" x-data="cronBuilder(form.cronExpression)">
+                            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">执行时间</label>
+
+                            <!-- 模板选择 -->
+                            <div class="grid grid-cols-4 gap-2 mb-3">
+                                <template x-for="tpl in templates" :key="tpl.value">
+                                    <button type="button"
+                                            @click="selectTemplate(tpl)"
+                                            class="px-2 py-1.5 text-xs rounded-md border transition-all"
+                                            :class="selectedTemplate === tpl.value
+                                                ? 'border-[var(--color-accent)] bg-[var(--color-accent-dim)] text-[var(--color-accent)]'
+                                                : 'border-[var(--color-border)] bg-[var(--color-bg-input)] text-[var(--color-text-secondary)] hover:border-[var(--color-accent)]'"
+                                            x-text="tpl.label">
+                                    </button>
+                                </template>
+                            </div>
+
+                            <!-- 自定义配置 -->
+                            <div x-show="selectedTemplate === 'custom'" class="space-y-3 p-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-input)]">
+                                <!-- 分钟 -->
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-[var(--color-text-secondary)] w-12">分钟</span>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="minuteMode" value="all" class="accent-[var(--color-accent)]"> 任意
+                                    </label>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="minuteMode" value="every" class="accent-[var(--color-accent)]"> 每隔
+                                    </label>
+                                    <template x-if="minuteMode === 'every'">
+                                        <div class="flex items-center gap-1">
+                                            <input x-model.number="everyNMinutes" type="number" min="1" max="59"
+                                                   class="input-tech" style="width: 60px; padding: 0.25rem 0.5rem;">
+                                            <span class="text-xs text-[var(--color-text-muted)]">分钟</span>
+                                        </div>
+                                    </template>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="minuteMode" value="specific" class="accent-[var(--color-accent)]"> 指定
+                                    </label>
+                                    <template x-if="minuteMode === 'specific'">
+                                        <input x-model="customMinute" type="text" class="input-tech"
+                                               style="width: 80px; padding: 0.25rem 0.5rem;" placeholder="0,15,30">
+                                    </template>
+                                </div>
+                                <!-- 小时 -->
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-[var(--color-text-secondary)] w-12">小时</span>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="hourMode" value="all" class="accent-[var(--color-accent)]"> 任意
+                                    </label>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="hourMode" value="every" class="accent-[var(--color-accent)]"> 每隔
+                                    </label>
+                                    <template x-if="hourMode === 'every'">
+                                        <div class="flex items-center gap-1">
+                                            <input x-model.number="everyNHours" type="number" min="1" max="23"
+                                                   class="input-tech" style="width: 60px; padding: 0.25rem 0.5rem;">
+                                            <span class="text-xs text-[var(--color-text-muted)]">小时</span>
+                                        </div>
+                                    </template>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="hourMode" value="specific" class="accent-[var(--color-accent)]"> 指定
+                                    </label>
+                                    <template x-if="hourMode === 'specific'">
+                                        <input x-model="customHour" type="text" class="input-tech"
+                                               style="width: 80px; padding: 0.25rem 0.5rem;" placeholder="9,18">
+                                    </template>
+                                </div>
+                                <!-- 日 -->
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-[var(--color-text-secondary)] w-12">日</span>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="dayOfMonthMode" value="all" class="accent-[var(--color-accent)]"> 任意
+                                    </label>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="dayOfMonthMode" value="specific" class="accent-[var(--color-accent)]"> 指定
+                                    </label>
+                                    <template x-if="dayOfMonthMode === 'specific'">
+                                        <input x-model="customDayOfMonth" type="text" class="input-tech"
+                                               style="width: 80px; padding: 0.25rem 0.5rem;" placeholder="1,15">
+                                    </template>
+                                </div>
+                                <!-- 月 -->
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-[var(--color-text-secondary)] w-12">月</span>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="monthMode" value="all" class="accent-[var(--color-accent)]"> 任意
+                                    </label>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="monthMode" value="specific" class="accent-[var(--color-accent)]"> 指定
+                                    </label>
+                                    <template x-if="monthMode === 'specific'">
+                                        <input x-model="customMonth" type="text" class="input-tech"
+                                               style="width: 80px; padding: 0.25rem 0.5rem;" placeholder="1,6,12">
+                                    </template>
+                                </div>
+                                <!-- 星期 -->
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-[var(--color-text-secondary)] w-12">星期</span>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="dayOfWeekMode" value="all" class="accent-[var(--color-accent)]"> 任意
+                                    </label>
+                                    <label class="flex items-center gap-1 text-xs">
+                                        <input type="radio" x-model="dayOfWeekMode" value="specific" class="accent-[var(--color-accent)]"> 指定
+                                    </label>
+                                    <template x-if="dayOfWeekMode === 'specific'">
+                                        <div class="flex gap-1">
+                                            <template x-for="day in weekDays" :key="day.value">
+                                                <button type="button"
+                                                        @click="toggleWeekDay(day.value)"
+                                                        class="w-8 h-8 text-xs rounded border transition-all"
+                                                        :class="isWeekDaySelected(day.value)
+                                                            ? 'border-[var(--color-accent)] bg-[var(--color-accent-dim)] text-[var(--color-accent)]'
+                                                            : 'border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]'"
+                                                        x-text="day.label.charAt(1)">
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- 表达式预览 -->
+                            <div class="mt-3 flex items-center gap-3">
+                                <code class="text-sm px-3 py-1 rounded bg-[var(--color-bg-input)] border border-[var(--color-border)] text-[var(--color-accent)]"
+                                      x-text="cronExpression"></code>
+                                <span class="text-sm text-[var(--color-text-secondary)]" x-text="humanReadable"></span>
+                            </div>
+
+                            <!-- 隐藏字段，同步到父表单 -->
+                            <input type="hidden" :value="cronExpression"
+                                   @input="form.cronExpression = $event.target.value"
+                                   x-effect="form.cronExpression = cronExpression">
                         </div>
+
                         <div x-show="form.triggerType === 'WEBHOOK'">
-                            <label class="block text-sm font-medium text-gray-700">Webhook路径</label>
-                            <input x-model="form.webhookPath" type="text"
-                                   class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">Webhook 路径</label>
+                            <input x-model="form.webhookPath" type="text" class="input-tech"
+                                   placeholder="/webhook/my-task">
                         </div>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">超时时间(秒)</label>
-                                <input x-model.number="form.timeoutSeconds" type="number" min="60" max="3600"
-                                       class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                                <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">超时时间(秒)</label>
+                                <input x-model.number="form.timeoutSeconds" type="number" min="60" max="3600" class="input-tech">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">最大重试次数</label>
-                                <input x-model.number="form.maxRetries" type="number" min="0" max="10"
-                                       class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                                <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">最大重试次数</label>
+                                <input x-model.number="form.maxRetries" type="number" min="0" max="10" class="input-tech">
                             </div>
                         </div>
                     </div>
                     <div class="mt-6 flex justify-end space-x-3">
-                        <button type="button" @click="closeModal()"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-                            取消
-                        </button>
-                        <button type="submit"
-                                class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
-                            保存
-                        </button>
+                        <button type="button" @click="closeModal()" class="btn-secondary">取消</button>
+                        <button type="submit" class="btn-primary">保存</button>
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Toast 通知 -->
+        <div x-show="toast.show" x-cloak
+             class="toast"
+             :class="toast.type === 'success' ? 'toast-success' : 'toast-error'"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:leave="transition ease-in duration-200">
+            <span x-text="toast.message"></span>
         </div>
     </main>
 
@@ -159,14 +310,35 @@
             showEditModal: false,
             form: { name: '', command: '', triggerType: 'CRON', cronExpression: '', webhookPath: '', timeoutSeconds: 300, maxRetries: 0 },
             editingId: null,
+            toast: { show: false, message: '', type: 'success' },
 
             async init() {
                 await this.loadTasks();
             },
 
+            showToast(message, type = 'success') {
+                this.toast = { show: true, message, type };
+                setTimeout(() => { this.toast.show = false; }, 3000);
+            },
+
             async loadTasks() {
                 const res = await fetch('/api/tasks');
                 this.tasks = await res.json();
+                // 加载每个任务的子任务统计
+                for (const task of this.tasks) {
+                    try {
+                        const execRes = await fetch('/api/tasks/' + task.id + '/executions/latest');
+                        if (execRes.ok) {
+                            const exec = await execRes.json();
+                            if (exec && exec.id) {
+                                const statsRes = await fetch('/api/executions/' + exec.id + '/subtasks/stats');
+                                if (statsRes.ok) {
+                                    task.subtaskStats = await statsRes.json();
+                                }
+                            }
+                        }
+                    } catch (e) { /* 忽略 */ }
+                }
             },
 
             getSuccessRate(task) {
@@ -184,9 +356,10 @@
                 if (res.ok) {
                     this.closeModal();
                     await this.loadTasks();
+                    this.showToast('任务创建成功');
                 } else {
                     const err = await res.json();
-                    alert(err.errors ? err.errors.join('\n') : '创建失败');
+                    this.showToast(err.errors ? err.errors.join('\n') : '创建失败', 'error');
                 }
             },
 
@@ -205,6 +378,7 @@
                 if (res.ok) {
                     this.closeModal();
                     await this.loadTasks();
+                    this.showToast('任务更新成功');
                 }
             },
 
@@ -212,18 +386,20 @@
                 if (!confirm('确定删除此任务？')) return;
                 await fetch('/api/tasks/' + id, { method: 'DELETE' });
                 await this.loadTasks();
+                this.showToast('任务已删除');
             },
 
             async toggleTask(task) {
                 const action = task.enabled ? 'disable' : 'enable';
                 await fetch('/api/tasks/' + task.id + '/' + action, { method: 'POST' });
                 await this.loadTasks();
+                this.showToast(task.enabled ? '任务已禁用' : '任务已启用');
             },
 
             async executeTask(id) {
                 const res = await fetch('/api/tasks/' + id + '/execute', { method: 'POST' });
                 if (res.ok) {
-                    alert('任务已提交执行');
+                    this.showToast('任务已提交执行');
                 }
             },
 

@@ -2,10 +2,24 @@ server:
   port: 8080
   servlet:
     context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+      force-request: true
+      force-response: true
 
 spring:
   application:
     name: agent-platform
+  # Jackson 时间格式化配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss:SSS
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
   # 数据库初始化
   sql:
     init:

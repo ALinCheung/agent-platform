@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -22,6 +23,7 @@ import java.sql.Statement;
 @Slf4j
 @Configuration
 @EnableTransactionManagement
+@Profile("!test")
 public class SqliteDataSourceConfig {
 
     @Value("${app.data-dir:./data}")

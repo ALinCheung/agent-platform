@@ -8,5 +8,6 @@ public enum ExecutionStatus {
     SUCCESS,
     FAILED,
     TIMEOUT,
-    RETRYING
+    RETRYING,
+    TERMINATED
 }

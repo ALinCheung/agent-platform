@@ -1,7 +1,9 @@
 package com.agentplatform.web.controller;
 
 import com.agentplatform.core.entity.Task;
+import com.agentplatform.core.entity.TaskExecution;
 import com.agentplatform.core.entity.ValidationResult;
+import com.agentplatform.core.service.ExecutionHistoryService;
 import com.agentplatform.core.service.TaskService;
 import com.agentplatform.core.service.TaskValidator;
 import com.agentplatform.executor.service.TaskExecutionQueue;
@@ -29,6 +31,7 @@ public class TaskController {
     private final TaskValidator taskValidator;
     private final TaskExecutionQueue taskExecutionQueue;
     private final SchedulerService schedulerService;
+    private final ExecutionHistoryService executionHistoryService;
 
     /**
      * 获取所有任务
@@ -164,4 +167,17 @@ public class TaskController {
         ValidationResult result = taskValidator.validate(task);
         return ResponseEntity.ok(result);
     }
+
+    /**
+     * 获取任务最近一次执行记录
+     */
+    @GetMapping("/{id}/executions/latest")
+    public ResponseEntity<TaskExecution> getLatestExecution(@PathVariable Long id) {
+        List<TaskExecution> executions = executionHistoryService.getByTaskId(id);
+        if (executions == null || executions.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(executions.get(0));
+    }
+
 }
